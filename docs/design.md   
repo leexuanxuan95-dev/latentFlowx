@@ -1,0 +1,33 @@
+=== LatentFlow (incremental + compression) ===
+Cost: {'operations': 50, 'bytes_in': 640}
+State: {'steps': 50, 'compressed_core': {'event': {'count': 48, 'last': 'user event 47'}}, 'short_history_len': 2}
+
+=== Token-like baseline (recompute history) ===
+Cost: {'operations': 1275, 'bytes_in': 0}
+State: {'steps': 50, 'compressed_core': {}, 'short_history_len': 50}
+
+=== Compare ===
+Ops ratio (baseline / latentflow): 25.5
+
+
+
+Block: <Block type=event content=a>
+Delta: {'delta_steps': 1}
+GuardTrace: {'checked': ['max_steps(10)', 'deny_block_types(forbidden)', 'max_event_count(event,2)'], 'passed': ['max_steps(10)', 'deny_block_types(forbidden)', 'max_event_count(event,2)'], 'failed': None}
+State: {'steps': 1, 'compressed_core': {}, 'short_history_len': 1}
+Block: <Block type=event content=b>
+Delta: {'delta_steps': 1}
+GuardTrace: {'checked': ['max_steps(10)', 'deny_block_types(forbidden)', 'max_event_count(event,2)'], 'passed': ['max_steps(10)', 'deny_block_types(forbidden)', 'max_event_count(event,2)'], 'failed': None}
+State: {'steps': 2, 'compressed_core': {}, 'short_history_len': 2}
+
+=== GUARD TRIGGERED ===
+Violation: [MAX_EVENT_COUNT] event count overflow: 3 > 2 meta={'event_type': 'event', 'count': 3, 'limit': 2}
+State after rollback: {'steps': 2, 'compressed_core': {}, 'short_history_len': 2}
+
+Decision: {'decision': 'no rule matched'}
+ReasonTrace: {'plugin': None}
+Cost: {'operations': 3, 'bytes_in': 0}
+
+
+
+
