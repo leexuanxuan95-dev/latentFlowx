@@ -1,46 +1,32 @@
-# demo/audit_pipeline_demo.py
 from core.engine import LatentFlowEngine
 from core.infer.cost import CostCounter
-from core.plugins.rule_plugin import ActivityRule
 from core.infer.continuous import ContinuousBuffer
-
-from core.guard.state_guard import StateGuard, GuardViolation
-from core.guard.rules import max_steps, deny_block_types, max_event_count
 from core.audit.logger import AuditLogger
+from core.verify.verifier import Verifier
+from core.guard.state_guard import StateGuard
+from core.guard.rules import max_steps, max_event_count
 
 def demo():
     logger = AuditLogger(path="logs/audit.jsonl", also_stdout=False)
-
-    guard = StateGuard(rules=[
-        max_steps(10),
-        deny_block_types({"forbidden"}),
-        max_event_count(limit=3, event_type="event"),
-    ])
-
     engine = LatentFlowEngine(
-        plugins=[ActivityRule()],
-        guard=guard,
-        audit_logger=logger,
+        plugins=[],
+        guard=StateGuard([max_steps(100), max_event_count(1000, "event")]),
+        verifier=Verifier(),
+        audit_logger=logger
     )
 
     state = engine.init()
     cost = CostCounter()
     buf = ContinuousBuffer(delimiter="\n", block_type="event")
 
-    buf.append("a\nb\nc\nd\n")
-    blocks = buf.emit_blocks()
+    buf.append("login\nclick_buy\ncancel_order\n")
+    for b in buf.emit_blocks():
+        state, _, _ = engine.consume(state, b, cost)
 
-    for b in blocks:
-        try:
-            state, delta, guard_trace = engine.consume(state, b, cost)
-            engine.reason(state)
-        except GuardViolation:
-            # already audited in incremental_update
-            break
-
-    print("Done. Audit log written to logs/audit.jsonl")
-    print("Final cost:", cost.summary())
-    print("Final state:", state.summary())
+    engine.reason(state)
+    print("Done. logs/audit.jsonl generated.")
+    print("Cost:", cost.summary())
+    print("State:", state.summary())
 
 if __name__ == "__main__":
     demo()

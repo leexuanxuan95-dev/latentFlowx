@@ -1,58 +1,44 @@
 # core/infer/continuous.py
 
 from typing import List, Optional
-
 from core.infer.block import Block
 
 
 class ContinuousBuffer:
     """
-    A non-token continuous input buffer.
-    - It does NOT tokenize.
-    - It only chunks raw stream into blocks by:
-        1) delimiter (e.g. '\n' or '.')
-        2) or fixed chunk size.
-    - Supports streaming append() with incremental emit().
+    Non-token continuous buffer.
+    - delimiter mode: emits blocks split by delimiter
+    - chunk_size mode: fixed-size chunks
     """
 
     def __init__(self, *, delimiter: Optional[str] = "\n", chunk_size: Optional[int] = None, block_type: str = "event"):
         if delimiter is None and chunk_size is None:
             raise ValueError("Either delimiter or chunk_size must be provided.")
         if delimiter is not None and chunk_size is not None:
-            raise ValueError("Choose either delimiter OR chunk_size, not both.")
-
+            raise ValueError("Choose delimiter OR chunk_size, not both.")
         self.delimiter = delimiter
         self.chunk_size = chunk_size
         self.block_type = block_type
-
         self._buf: str = ""
-        self._emitted_count: int = 0  # how many blocks emitted so far (debug/metrics)
+        self._emitted_count: int = 0
 
     def append(self, data: str) -> None:
-        """Append raw continuous stream data."""
         if not isinstance(data, str):
-            raise TypeError("ContinuousBuffer currently expects str input.")
+            raise TypeError("ContinuousBuffer expects str input.")
         self._buf += data
 
     def emit_blocks(self) -> List[Block]:
-        """
-        Emit newly available blocks incrementally.
-        - If delimiter mode: emit full segments split by delimiter, keep tail.
-        - If chunk_size mode: emit fixed-sized chunks, keep remainder.
-        """
         blocks: List[Block] = []
 
         if self.delimiter is not None:
             parts = self._buf.split(self.delimiter)
-            # keep last part as tail (incomplete)
-            complete_parts, tail = parts[:-1], parts[-1]
-            for p in complete_parts:
+            complete, tail = parts[:-1], parts[-1]
+            for p in complete:
                 p = p.strip()
                 if p:
                     blocks.append(Block(p, block_type=self.block_type))
-            self._buf = tail  # keep tail
+            self._buf = tail
         else:
-            # chunk_size mode
             while len(self._buf) >= self.chunk_size:
                 chunk = self._buf[: self.chunk_size]
                 self._buf = self._buf[self.chunk_size :]
@@ -64,10 +50,6 @@ class ContinuousBuffer:
         return blocks
 
     def flush(self) -> List[Block]:
-        """
-        Force flush remaining tail into a block (if non-empty).
-        Useful at end of stream.
-        """
         tail = self._buf.strip()
         self._buf = ""
         if tail:
