@@ -139,3 +139,19 @@ Run:
 python demo/audit_pipeline_demo.py
 
 
+core/meta/
+├── reflection.py         # 失败分类 + 经验写入
+├── affect.py             # 风险/情绪调制器（影响搜索/阈值）
+├── learning.py           # 统计学习：成功率/失败率/策略权重
+└── causal.py             # action-context->outcome 的因果记忆
+
+core/planner/
+├── heuristics.py         # 你已有，继续强化：受 affect 调制
+└── constrained_planner.py# 你已有，强化：候选生成+剪枝
+
+core/verify/
+├── constraints_verifier.py# 你已有，强化：业务约束/权限/审批
+└── post_checks.py        # 执行后校验：结果是否符合预期
+
+
+
