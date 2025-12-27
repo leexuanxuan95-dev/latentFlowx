@@ -139,3 +139,11 @@ Run:
 python demo/audit_pipeline_demo.py
 
 
+core/dialog/
+├── dialog_state.py       # 对话状态（当前 goal、缺槽位、上下文主题）
+├── clarification.py      # 缺槽位/冲突约束 -> 自动追问
+├── response_builder.py   # 结构化结果 -> 自然语言（模板 + 解释）
+└── renderer.py           # 多风格输出：简洁/详细/审计版
+
+core/lang/
+└── llm_adapter.py        # 可选：润色、澄清问题生成（永不决定行动）
